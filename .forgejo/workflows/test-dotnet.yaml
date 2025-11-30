@@ -1,0 +1,14 @@
+name: Test .NET
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  hello:
+    runs-on: dotnet
+    steps:
+      - name: Hello World
+        run: |
+          echo 'Console.WriteLine("Hello from C# on .NET " + Environment.Version);' > Hello.cs
+          dotnet run Hello.cs

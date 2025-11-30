@@ -1,0 +1,15 @@
+name: Test Ubuntu
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  hello:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: https://code.forgejo.org/actions/checkout@v4
+
+      - name: Hello World
+        run: echo "Hello from Ubuntu!"
