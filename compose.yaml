@@ -93,7 +93,8 @@ services:
           forgejo-runner create-runner-file \
             --instance "http://server:3000" \
             --name "docker-runner" \
-            --secret "${RUNNER_SECRET}"
+            --secret "${RUNNER_SECRET}" \
+            --labels "ubuntu-latest:docker://ubuntu:24.04,dotnet:docker://mcr.microsoft.com/dotnet/sdk:10.0,node:docker://node:24-bookworm"
         fi &&
         sleep 5 &&
         forgejo-runner daemon
