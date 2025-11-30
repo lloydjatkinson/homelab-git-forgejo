@@ -95,7 +95,19 @@ services:
             --name "docker-runner" \
             --secret "${RUNNER_SECRET}"
         fi &&
+        if [ ! -f config.yml ]; then
+          cat > config.yml << EOF
+      runner:
+        file: .runner
+        capacity: 1
+        timeout: 3h
+        labels:
+          - "ubuntu-latest:docker://ubuntu:24.04"
+          - "dotnet:docker://mcr.microsoft.com/dotnet/sdk:10.0"
+          - "node:docker://node:24-bookworm"
+      EOF
+        fi &&
         sleep 5 &&
-        forgejo-runner daemon
+        forgejo-runner daemon --config config.yml
       '
     restart: unless-stopped
