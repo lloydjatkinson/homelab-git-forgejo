@@ -1,0 +1,15 @@
+name: Test Runner
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  hello:
+    runs-on: docker
+    steps:
+      - name: Checkout
+        uses: https://code.forgejo.org/actions/checkout@v4
+
+      - name: Hello World
+        run: node -e "console.log('Hello from Forgejo Actions!')"

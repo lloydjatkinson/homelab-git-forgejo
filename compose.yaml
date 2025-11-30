@@ -9,12 +9,9 @@ services:
     env_file:
       - .env
     environment:
-      # Server configuration
       - FORGEJO__server__DOMAIN=${DOMAIN}
       - FORGEJO__server__ROOT_URL=${ROOT_URL}
       - FORGEJO__server__SSH_DOMAIN=${DOMAIN}
-      
-      # Mailer configuration
       - FORGEJO__mailer__ENABLED=${SMTP_ENABLED}
       - FORGEJO__mailer__PROTOCOL=${SMTP_PROTOCOL}
       - FORGEJO__mailer__SMTP_ADDR=${SMTP_ADDR}
@@ -24,8 +21,6 @@ services:
       - FORGEJO__mailer__FROM=${SMTP_FROM}
       - FORGEJO__mailer__ENABLE_HELO=${SMTP_HELO}
       - FORGEJO__mailer__SUBJECT_PREFIX=${SMTP_PREFIX}
-      
-      # Email notifications
       - FORGEJO__service__ENABLE_NOTIFY_MAIL=${EMAIL_NOTIFICATIONS}
     restart: always
     networks:
@@ -37,3 +32,70 @@ services:
     ports:
       - '3000:3000'
       - '222:22'
+
+  docker-in-docker:
+    image: docker:dind
+    privileged: true
+    command: ['dockerd', '-H', 'tcp://0.0.0.0:2375', '--tls=false']
+    restart: unless-stopped
+    networks:
+      - forgejo
+
+  runner-init:
+    image: data.forgejo.org/forgejo/runner:11
+    user: root
+    volumes:
+      - ./runner:/data
+    command: sh -c "chown -R 1000:1000 /data"
+    restart: "no"
+
+  runner-register:
+    image: codeberg.org/forgejo/forgejo:13
+    user: "1000:1000"
+    depends_on:
+      - server
+    volumes:
+      - ./forgejo:/data
+    command: >
+      sh -c '
+        until forgejo forgejo-cli actions register \
+          --name "docker-runner" \
+          --scope "" \
+          --secret "${RUNNER_SECRET}" \
+          --keep-labels; do
+          echo "Waiting for Forgejo...";
+          sleep 5;
+        done
+      '
+    restart: "no"
+    networks:
+      - forgejo
+
+  runner:
+    image: data.forgejo.org/forgejo/runner:11
+    depends_on:
+      runner-init:
+        condition: service_completed_successfully
+      runner-register:
+        condition: service_completed_successfully
+      docker-in-docker:
+        condition: service_started
+    environment:
+      DOCKER_HOST: tcp://docker-in-docker:2375
+    volumes:
+      - ./runner:/data
+    working_dir: /data
+    networks:
+      - forgejo
+    command: >
+      sh -c '
+        if [ ! -f .runner ]; then
+          forgejo-runner create-runner-file \
+            --instance "http://server:3000" \
+            --name "docker-runner" \
+            --secret "${RUNNER_SECRET}"
+        fi &&
+        sleep 5 &&
+        forgejo-runner daemon
+      '
+    restart: unless-stopped
