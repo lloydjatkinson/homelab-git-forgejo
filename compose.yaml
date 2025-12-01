@@ -62,7 +62,7 @@ services:
           --name "docker-runner" \
           --scope "" \
           --secret "${RUNNER_SECRET}" \
-          --labels "ubuntu-latest:docker://ubuntu:24.04,dotnet:docker://mcr.microsoft.com/dotnet/sdk:10.0,node:docker://node:24-bookworm"; do
+          --labels "ubuntu-latest:docker://docker.gitea.com/runner-images:ubuntu-24.04,dotnet:docker://mcr.microsoft.com/dotnet/sdk:10.0"; do
           echo "Waiting for Forgejo...";
           sleep 5;
         done
@@ -102,9 +102,8 @@ services:
         capacity: 1
         timeout: 3h
         labels:
-          - "ubuntu-latest:docker://ubuntu:24.04"
+          - "ubuntu-latest:docker://docker.gitea.com/runner-images:ubuntu-24.04"
           - "dotnet:docker://mcr.microsoft.com/dotnet/sdk:10.0"
-          - "node:docker://node:24-bookworm"
       EOF
         fi &&
         sleep 5 &&
